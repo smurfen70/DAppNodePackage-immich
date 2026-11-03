@@ -1,4 +1,4 @@
-name: Build test
+name: Build
 on:
   workflow_dispatch:
   pull_request:
@@ -6,14 +6,19 @@ on:
 
 jobs:
   build:
-    runs-on: ipfs-dev-gateway
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npx @dappnode/dappnodesdk github-action build
+      - name: Build test
+        if: github.event_name != 'workflow_dispatch'
+        run: npx @dappnode/dappnodesdk build --skip_save
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
-          PINATA_SECRET_API_KEY: ${{ secrets.PINATA_SECRET_API_KEY }}
+      - name: Build installable package
+        if: github.event_name == 'workflow_dispatch'
+        run: npx @dappnode/dappnodesdk build --provider remote --timeout 1h
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
