@@ -4,7 +4,7 @@ services:
     build:
       context: ./immich-server
       args:
-        IMMICH_VERSION: v2.1.0
+        IMMICH_VERSION: v3.3.5
     environment:
       DB_USERNAME: "postgres"
       DB_PASSWORD: "postgres"
@@ -22,7 +22,7 @@ services:
     build:
       context: ./immich-machine-learning
       args:
-        IMMICH_VERSION: v2.1.0
+        IMMICH_VERSION: v3.3.5
     environment:
       UPLOAD_LOCATION: "./library"
     volumes:
@@ -34,17 +34,19 @@ services:
     build:
       context: ./redis
       args:
-        VALKEY_VERSION: 8-bookworm
+        VALKEY_VERSION: 9
     environment: {}
     volumes:
       - redis-data:/data
     healthcheck:
-      test: redis-cli ping || exit 1
+      test: redis-cli ping | grep -q PONG || exit 1
     restart: always
   database:
     build:
       context: ./postgres
       args:
+        # Same image as Immich v3.3.5 upstream. Must stay on Postgres 14 so the
+        # existing postgres-data volume opens in place.
         POSTGRES_VERSION: 14-vectorchord0.4.3-pgvectors0.2.0
     environment:
       POSTGRES_PASSWORD: "postgres"
@@ -54,7 +56,10 @@ services:
       DB_DATA_LOCATION: "./postgres"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    shm_size: 128mb
     restart: always
+    healthcheck:
+      disable: false
 
 volumes:
   immich-server-upload: {}
